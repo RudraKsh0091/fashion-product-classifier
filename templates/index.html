@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StyleScan — AI Fashion Intelligence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Reset & Variables ──────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink:        #0e0e0e;
+      --paper:      #f5f0e8;
+      --cream:      #ede8dc;
+      --accent:     #c8622a;
+      --accent-2:   #2a6bc8;
+      --muted:      #8a8070;
+      --border:     #d4cfc4;
+      --card-bg:    #ffffff;
+      --shadow:     0 2px 20px rgba(14,14,14,0.08);
+      --shadow-lg:  0 8px 40px rgba(14,14,14,0.14);
+    }
+
+    html { font-size: 16px; scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Grain overlay ──────────────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 999;
+      opacity: 0.4;
+    }
+
+    /* ── Header ─────────────────────────────────────────── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.5rem 3rem;
+      border-bottom: 1px solid var(--border);
+      background: var(--paper);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      display: flex;
+      align-items: baseline;
+      gap: 0.4rem;
+    }
+
+    .logo-main {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--ink);
+    }
+
+    .logo-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--accent);
+      border-radius: 50%;
+      display: inline-block;
+      margin-bottom: 4px;
+    }
+
+    .logo-sub {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--muted);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    .header-tag {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      padding: 0.3rem 0.8rem;
+      border-radius: 2rem;
+    }
+
+    /* ── Hero ───────────────────────────────────────────── */
+    .hero {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0;
+      min-height: 88vh;
+    }
+
+    .hero-left {
+      padding: 5rem 3rem 4rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      border-right: 1px solid var(--border);
+    }
+
+    .hero-eyebrow {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 1.5rem;
+    }
+
+    .hero-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.5rem, 4vw, 4rem);
+      line-height: 1.1;
+      font-weight: 700;
+      color: var(--ink);
+      margin-bottom: 1.5rem;
+    }
+
+    .hero-title em {
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    .hero-desc {
+      font-size: 1rem;
+      line-height: 1.7;
+      color: var(--muted);
+      max-width: 420px;
+      margin-bottom: 3rem;
+      font-weight: 300;
+    }
+
+    .stats-row {
+      display: flex;
+      gap: 2.5rem;
+    }
+
+    .stat {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .stat-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .stat-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    /* ── Upload Panel ───────────────────────────────────── */
+    .hero-right {
+      padding: 4rem 3rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      background: var(--cream);
+    }
+
+    .upload-panel {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .upload-header {
+      padding: 1.2rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .upload-title {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .upload-status {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      background: #4caf50;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    .drop-zone {
+      padding: 3rem 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: background 0.2s;
+      position: relative;
+      border: 2px dashed transparent;
+      margin: 1rem;
+      border-radius: 2px;
+    }
+
+    .drop-zone:hover, .drop-zone.dragover {
+      background: var(--cream);
+      border-color: var(--border);
+    }
+
+    .drop-icon {
+      width: 48px;
+      height: 48px;
+      margin: 0 auto 1rem;
+      opacity: 0.3;
+    }
+
+    .drop-text {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.1rem;
+      color: var(--ink);
+      margin-bottom: 0.5rem;
+    }
+
+    .drop-sub {
+      font-size: 0.8rem;
+      color: var(--muted);
+      font-weight: 300;
+    }
+
+    #file-input { display: none; }
+
+    .preview-zone {
+      display: none;
+      padding: 1rem;
+      position: relative;
+    }
+
+    .preview-zone img {
+      width: 100%;
+      height: 280px;
+      object-fit: contain;
+      border-radius: 2px;
+      background: var(--cream);
+    }
+
+    .preview-remove {
+      position: absolute;
+      top: 1.5rem;
+      right: 1.5rem;
+      background: var(--ink);
+      color: white;
+      border: none;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+    }
+
+    .preview-remove:hover { opacity: 1; }
+
+    .analyze-btn {
+      margin: 0 1rem 1rem;
+      width: calc(100% - 2rem);
+      padding: 1rem;
+      background: var(--ink);
+      color: var(--paper);
+      border: none;
+      font-family: 'DM Mono', monospace;
+      font-size: 0.8rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      cursor: pointer;
+      border-radius: 2px;
+      transition: background 0.2s, transform 0.1s;
+      display: none;
+    }
+
+    .analyze-btn:hover { background: #2a2a2a; }
+    .analyze-btn:active { transform: scale(0.99); }
+    .analyze-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* ── Loading ─────────────────────────────────────────── */
+    .loading {
+      display: none;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    .loading-bar {
+      height: 2px;
+      background: var(--border);
+      border-radius: 1px;
+      overflow: hidden;
+      margin-bottom: 1rem;
+    }
+
+    .loading-bar-fill {
+      height: 100%;
+      background: var(--accent);
+      width: 0%;
+      animation: load-progress 1.5s ease-in-out infinite;
+    }
+
+    @keyframes load-progress {
+      0% { width: 0%; margin-left: 0; }
+      50% { width: 60%; margin-left: 20%; }
+      100% { width: 0%; margin-left: 100%; }
+    }
+
+    .loading-text {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+    }
+
+    /* ── Results Section ────────────────────────────────── */
+    #results {
+      display: none;
+      padding: 5rem 3rem;
+      border-top: 1px solid var(--border);
+      animation: fadeUp 0.5s ease;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .results-grid {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 3rem;
+      margin-bottom: 4rem;
+    }
+
+    .section-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* Uploaded image */
+    .result-image img {
+      width: 100%;
+      aspect-ratio: 3/4;
+      object-fit: contain;
+      background: var(--cream);
+      border: 1px solid var(--border);
+    }
+
+    /* Predictions */
+    .prediction-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .prediction-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      padding: 1.2rem 1.5rem;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .prediction-item.top {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent);
+    }
+
+    .prediction-item:hover { box-shadow: var(--shadow); }
+
+    .pred-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .pred-label {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .pred-confidence {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--accent);
+    }
+
+    .pred-bar-bg {
+      height: 3px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .pred-bar-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+      transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+      width: 0%;
+    }
+
+    .pred-rank {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.6rem;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    /* Similar Products */
+    .similar-section { margin-top: 1rem; }
+
+    .similar-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 1rem;
+    }
+
+    .similar-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+      transition: transform 0.2s, box-shadow 0.2s;
+      cursor: pointer;
+    }
+
+    .similar-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .similar-card img {
+      width: 100%;
+      aspect-ratio: 3/4;
+      object-fit: contain;
+      background: var(--cream);
+      display: block;
+    }
+
+    .similar-card-info {
+      padding: 0.75rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .similar-label {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--ink);
+      margin-bottom: 0.2rem;
+    }
+
+    .similar-score {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.6rem;
+      color: var(--muted);
+    }
+
+    .no-similar {
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-style: italic;
+      padding: 2rem 0;
+    }
+
+    /* ── Footer ─────────────────────────────────────────── */
+    footer {
+      padding: 2rem 3rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .footer-left {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+    }
+
+    .footer-right {
+      font-family: 'DM Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--muted);
+    }
+
+    /* ── Responsive ─────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .hero { grid-template-columns: 1fr; min-height: auto; }
+      .hero-left { border-right: none; border-bottom: 1px solid var(--border); padding: 3rem 1.5rem; }
+      .hero-right { padding: 2rem 1.5rem; }
+      .results-grid { grid-template-columns: 1fr; }
+      .similar-grid { grid-template-columns: repeat(3, 1fr); }
+      header { padding: 1rem 1.5rem; }
+      #results { padding: 3rem 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="logo">
+      <span class="logo-main">StyleScan</span>
+      <span class="logo-dot"></span>
+      <span class="logo-sub">AI</span>
+    </div>
+    <span class="header-tag">MobileNetV2 · 40 Classes · 91.5% Accuracy</span>
+  </header>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-left">
+      <p class="hero-eyebrow">— Fashion Intelligence</p>
+      <h1 class="hero-title">
+        Identify any<br/>
+        fashion product<br/>
+        <em>instantly.</em>
+      </h1>
+      <p class="hero-desc">
+        Upload any fashion image and StyleScan's deep learning model
+        will classify the product type and surface visually similar items
+        from the dataset — powered by MobileNetV2 transfer learning.
+      </p>
+      <div class="stats-row">
+        <div class="stat">
+          <span class="stat-num">91.5%</span>
+          <span class="stat-label">Val Accuracy</span>
+        </div>
+        <div class="stat">
+          <span class="stat-num">40</span>
+          <span class="stat-label">Categories</span>
+        </div>
+        <div class="stat">
+          <span class="stat-num">44k</span>
+          <span class="stat-label">Training Images</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-right">
+      <div class="upload-panel">
+        <div class="upload-header">
+          <span class="upload-title">Image Analysis</span>
+          <span class="upload-status">
+            <span class="status-dot"></span>
+            Model Ready
+          </span>
+        </div>
+
+        <!-- Drop zone -->
+        <div class="drop-zone" id="drop-zone">
+          <svg class="drop-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="8" y="8" width="32" height="32" rx="2" stroke="#0e0e0e" stroke-width="2"/>
+            <path d="M24 18v12M18 24l6-6 6 6" stroke="#0e0e0e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <p class="drop-text">Drop your fashion image here</p>
+          <p class="drop-sub">or click to browse — JPG, PNG, WEBP</p>
+          <input type="file" id="file-input" accept="image/*" />
+        </div>
+
+        <!-- Preview -->
+        <div class="preview-zone" id="preview-zone">
+          <img id="preview-img" src="" alt="Preview" />
+          <button class="preview-remove" id="remove-btn">✕</button>
+        </div>
+
+        <!-- Loading -->
+        <div class="loading" id="loading">
+          <div class="loading-bar"><div class="loading-bar-fill"></div></div>
+          <p class="loading-text">Analyzing fashion product...</p>
+        </div>
+
+        <button class="analyze-btn" id="analyze-btn">Analyze Image →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Results -->
+  <section id="results">
+    <div class="results-grid">
+      <!-- Uploaded image -->
+      <div class="result-image">
+        <p class="section-label">Analyzed Image</p>
+        <img id="result-img" src="" alt="Analyzed" />
+      </div>
+
+      <!-- Predictions -->
+      <div class="predictions">
+        <p class="section-label">Classification Results</p>
+        <div class="prediction-list" id="prediction-list"></div>
+      </div>
+    </div>
+
+    <!-- Similar products -->
+    <div class="similar-section">
+      <p class="section-label">Similar Products from Dataset</p>
+      <div class="similar-grid" id="similar-grid"></div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <span class="footer-left">StyleScan · MobileNetV2 Transfer Learning · Fashion Product Classifier</span>
+    <span class="footer-right">Built with TensorFlow · Keras · Flask</span>
+  </footer>
+
+  <script>
+    const dropZone   = document.getElementById('drop-zone');
+    const fileInput  = document.getElementById('file-input');
+    const previewZone = document.getElementById('preview-zone');
+    const previewImg = document.getElementById('preview-img');
+    const removeBtn  = document.getElementById('remove-btn');
+    const analyzeBtn = document.getElementById('analyze-btn');
+    const loading    = document.getElementById('loading');
+    const results    = document.getElementById('results');
+
+    let selectedFile = null;
+
+    // Click to browse
+    dropZone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
+
+    // Drag & drop
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      handleFile(e.dataTransfer.files[0]);
+    });
+
+    function handleFile(file) {
+      if (!file || !file.type.startsWith('image/')) return;
+      selectedFile = file;
+      const reader = new FileReader();
+      reader.onload = e => {
+        previewImg.src = e.target.result;
+        dropZone.style.display = 'none';
+        previewZone.style.display = 'block';
+        analyzeBtn.style.display = 'block';
+        results.style.display = 'none';
+      };
+      reader.readAsDataURL(file);
+    }
+
+    removeBtn.addEventListener('click', () => {
+      selectedFile = null;
+      fileInput.value = '';
+      dropZone.style.display = 'block';
+      previewZone.style.display = 'none';
+      analyzeBtn.style.display = 'none';
+      results.style.display = 'none';
+    });
+
+    analyzeBtn.addEventListener('click', async () => {
+      if (!selectedFile) return;
+
+      analyzeBtn.disabled = true;
+      analyzeBtn.textContent = 'Analyzing...';
+      loading.style.display = 'block';
+      results.style.display = 'none';
+
+      const formData = new FormData();
+      formData.append('image', selectedFile);
+
+      try {
+        const res = await fetch('/predict', { method: 'POST', body: formData });
+        const data = await res.json();
+
+        if (data.error) throw new Error(data.error);
+        renderResults(data);
+      } catch (err) {
+        alert('Error: ' + err.message);
+      } finally {
+        loading.style.display = 'none';
+        analyzeBtn.disabled = false;
+        analyzeBtn.textContent = 'Analyze Image →';
+      }
+    });
+
+    function renderResults(data) {
+      // Uploaded image
+      document.getElementById('result-img').src = previewImg.src;
+
+      // Predictions
+      const predList = document.getElementById('prediction-list');
+      predList.innerHTML = '';
+      data.predictions.forEach((p, i) => {
+        const item = document.createElement('div');
+        item.className = 'prediction-item' + (i === 0 ? ' top' : '');
+        item.innerHTML = `
+          <span class="pred-rank">${i === 0 ? '★ Top Match' : `#${i + 1} Match`}</span>
+          <div class="pred-header">
+            <span class="pred-label">${p.label}</span>
+            <span class="pred-confidence">${p.confidence.toFixed(1)}%</span>
+          </div>
+          <div class="pred-bar-bg">
+            <div class="pred-bar-fill" style="width:0%" data-width="${p.confidence}%"></div>
+          </div>
+        `;
+        predList.appendChild(item);
+      });
+
+      // Animate bars after render
+      requestAnimationFrame(() => {
+        document.querySelectorAll('.pred-bar-fill').forEach(bar => {
+          bar.style.width = bar.dataset.width;
+        });
+      });
+
+      // Similar products
+      const grid = document.getElementById('similar-grid');
+      grid.innerHTML = '';
+      if (data.similar_products && data.similar_products.length > 0) {
+        data.similar_products.forEach(p => {
+          const card = document.createElement('div');
+          card.className = 'similar-card';
+          card.innerHTML = `
+            <img src="${p.image_path}" alt="${p.label}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 130%22><rect width=%22100%22 height=%22130%22 fill=%22%23ede8dc%22/></svg>'" />
+            <div class="similar-card-info">
+              <p class="similar-label">${p.label}</p>
+              <p class="similar-score">${(p.score * 100).toFixed(1)}% match</p>
+            </div>
+          `;
+          grid.appendChild(card);
+        });
+      } else {
+        grid.innerHTML = '<p class="no-similar">Run build_index.py to enable similar product search.</p>';
+      }
+
+      results.style.display = 'block';
+      results.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  </script>
+</body>
+</html>

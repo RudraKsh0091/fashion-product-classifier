@@ -1,5 +1,12 @@
-models/
 *.keras
 *.npy
+*.npz
 *.json
-test_img
+__pycache__/
+*.pyc
+static/uploads/
+static/dataset_images/
+.env
+venv/
+*.egg-info/
+.DS_Store
