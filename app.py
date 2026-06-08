@@ -142,7 +142,12 @@ def health():
     })
 
 # ── Entry point ────────────────────────────────────────────────────────────────
-if __name__ == '__main__':
+
+try:
     load_model()
     load_similar_products_index()
-    app.run(debug=True, port=5000)
+except Exception as e:
+    print(f"Startup failed: {e}")
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000, debug=True)
