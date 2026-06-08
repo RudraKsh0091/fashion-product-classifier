@@ -6,6 +6,9 @@ from werkzeug.utils import secure_filename
 from PIL import Image
 import io
 import base64
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras.models import Model
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max upload
@@ -19,8 +22,6 @@ similar_products_index = None  # precomputed feature vectors
 
 def load_model():
     global model, feature_extractor, le_classes
-    import tensorflow as tf
-    from tensorflow import keras
 
     print("[StyleScan] Loading model...")
     model = keras.models.load_model('models/fashion_classifier.keras')
@@ -69,6 +70,8 @@ def uploaded_file(filename):
 
 @app.route('/predict', methods=['POST'])
 def predict():
+    if model is None or feature_extractor is None or le_classes is None:
+        return jsonify({'error': 'Model not loaded'}), 500
     if 'image' not in request.files:
         return jsonify({'error': 'No image uploaded'}), 400
 
