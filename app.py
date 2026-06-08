@@ -68,63 +68,99 @@ def index():
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
+# @app.route('/predict', methods=['POST'])
+# def predict():
+#     if model is None or feature_extractor is None or le_classes is None:
+#         return jsonify({'error': 'Model not loaded'}), 500
+#     if 'image' not in request.files:
+#         return jsonify({'error': 'No image uploaded'}), 400
+
+#     file = request.files['image']
+#     if file.filename == '':
+#         return jsonify({'error': 'Empty filename'}), 400
+
+#     image_bytes = file.read()
+
+#     # preprocess
+#     img_tensor, pil_img = preprocess_image(image_bytes)
+
+#     # ── Top-3 predictions ──
+#     preds = model.predict(img_tensor, verbose=0)[0]
+#     top3_idx = np.argsort(preds)[::-1][:3]
+#     predictions = [
+#         {
+#             'label': str(le_classes[idx]),
+#             'confidence': float(preds[idx]) * 100
+#         }
+#         for idx in top3_idx
+#     ]
+
+#     # ── Similar products ──
+#     # similar = []
+#     # if similar_products_index is not None:
+#     #     query_features = feature_extractor.predict(img_tensor, verbose=0)[0]
+#     #     query_features = query_features / (np.linalg.norm(query_features) + 1e-8)
+
+#     #     all_features = similar_products_index['features']
+#     #     scores = all_features @ query_features  # cosine similarity (features are pre-normalized)
+
+#     #     top5_idx = np.argsort(scores)[::-1][:5]
+#     #     for idx in top5_idx:
+#     #         product_id = str(similar_products_index['ids'][idx])
+#     #         img_path = f'static/dataset_images/{product_id}.jpg'
+#     #         similar.append({
+#     #             'id': product_id,
+#     #             'label': str(similar_products_index['labels'][idx]),
+#     #             'score': float(scores[idx]),
+#     #             'image_path': img_path
+#     #         })
+
+#     # save uploaded image for display
+#     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+#     save_path = os.path.join(app.config['UPLOAD_FOLDER'], 'last_upload.jpg')
+#     pil_img.save(save_path)
+
+#     return jsonify({
+#         'predictions': predictions,
+#         # 'similar_products': similar,
+#         'uploaded_image': 'static/uploads/last_upload.jpg'
+#     })
+
+
+
 @app.route('/predict', methods=['POST'])
 def predict():
-    if model is None or feature_extractor is None or le_classes is None:
-        return jsonify({'error': 'Model not loaded'}), 500
-    if 'image' not in request.files:
-        return jsonify({'error': 'No image uploaded'}), 400
+    print("=== PREDICT HIT ===", flush=True)
 
-    file = request.files['image']
-    if file.filename == '':
-        return jsonify({'error': 'Empty filename'}), 400
+    try:
+        if 'image' not in request.files:
+            print("No image", flush=True)
+            return jsonify({'error': 'No image'}), 400
 
-    image_bytes = file.read()
+        file = request.files['image']
+        print("File received", flush=True)
 
-    # preprocess
-    img_tensor, pil_img = preprocess_image(image_bytes)
+        image_bytes = file.read()
+        print("Bytes:", len(image_bytes), flush=True)
 
-    # ── Top-3 predictions ──
-    preds = model.predict(img_tensor, verbose=0)[0]
-    top3_idx = np.argsort(preds)[::-1][:3]
-    predictions = [
-        {
-            'label': str(le_classes[idx]),
-            'confidence': float(preds[idx]) * 100
-        }
-        for idx in top3_idx
-    ]
+        img_tensor, pil_img = preprocess_image(image_bytes)
+        print("Preprocessed", flush=True)
 
-    # ── Similar products ──
-    # similar = []
-    # if similar_products_index is not None:
-    #     query_features = feature_extractor.predict(img_tensor, verbose=0)[0]
-    #     query_features = query_features / (np.linalg.norm(query_features) + 1e-8)
+        preds = model.predict(img_tensor, verbose=0)
+        print("Prediction done", flush=True)
 
-    #     all_features = similar_products_index['features']
-    #     scores = all_features @ query_features  # cosine similarity (features are pre-normalized)
+        return jsonify({"success": True})
 
-    #     top5_idx = np.argsort(scores)[::-1][:5]
-    #     for idx in top5_idx:
-    #         product_id = str(similar_products_index['ids'][idx])
-    #         img_path = f'static/dataset_images/{product_id}.jpg'
-    #         similar.append({
-    #             'id': product_id,
-    #             'label': str(similar_products_index['labels'][idx]),
-    #             'score': float(scores[idx]),
-    #             'image_path': img_path
-    #         })
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
 
-    # save uploaded image for display
-    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-    save_path = os.path.join(app.config['UPLOAD_FOLDER'], 'last_upload.jpg')
-    pil_img.save(save_path)
+        return jsonify({
+            "error": str(e)
+        }), 500
 
-    return jsonify({
-        'predictions': predictions,
-        # 'similar_products': similar,
-        'uploaded_image': 'static/uploads/last_upload.jpg'
-    })
+
+
 
 @app.route('/classes')
 def get_classes():
