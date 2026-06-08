@@ -96,24 +96,24 @@ def predict():
     ]
 
     # ── Similar products ──
-    similar = []
-    if similar_products_index is not None:
-        query_features = feature_extractor.predict(img_tensor, verbose=0)[0]
-        query_features = query_features / (np.linalg.norm(query_features) + 1e-8)
+    # similar = []
+    # if similar_products_index is not None:
+    #     query_features = feature_extractor.predict(img_tensor, verbose=0)[0]
+    #     query_features = query_features / (np.linalg.norm(query_features) + 1e-8)
 
-        all_features = similar_products_index['features']
-        scores = all_features @ query_features  # cosine similarity (features are pre-normalized)
+    #     all_features = similar_products_index['features']
+    #     scores = all_features @ query_features  # cosine similarity (features are pre-normalized)
 
-        top5_idx = np.argsort(scores)[::-1][:5]
-        for idx in top5_idx:
-            product_id = str(similar_products_index['ids'][idx])
-            img_path = f'static/dataset_images/{product_id}.jpg'
-            similar.append({
-                'id': product_id,
-                'label': str(similar_products_index['labels'][idx]),
-                'score': float(scores[idx]),
-                'image_path': img_path
-            })
+    #     top5_idx = np.argsort(scores)[::-1][:5]
+    #     for idx in top5_idx:
+    #         product_id = str(similar_products_index['ids'][idx])
+    #         img_path = f'static/dataset_images/{product_id}.jpg'
+    #         similar.append({
+    #             'id': product_id,
+    #             'label': str(similar_products_index['labels'][idx]),
+    #             'score': float(scores[idx]),
+    #             'image_path': img_path
+    #         })
 
     # save uploaded image for display
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -122,7 +122,7 @@ def predict():
 
     return jsonify({
         'predictions': predictions,
-        'similar_products': similar,
+        # 'similar_products': similar,
         'uploaded_image': 'static/uploads/last_upload.jpg'
     })
 
