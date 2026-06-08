@@ -10,6 +10,9 @@ app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 
+os.makedirs('static', exist_ok=True)
+os.makedirs('static/uploads', exist_ok=True)
+
 model = None
 le_classes = None
 
