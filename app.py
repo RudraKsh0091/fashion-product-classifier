@@ -49,6 +49,22 @@ def predict():
     if file.filename == '':
         return jsonify({'error': 'Empty filename'}), 400
 
+
+    try:
+        image_bytes = file.read()
+        print("1. File read", flush=True)
+
+        img_tensor, pil_img = preprocess_image(image_bytes)
+        print("2. Preprocessed", flush=True)
+
+        preds = model.predict(img_tensor, verbose=0)[0]
+        print("3. Prediction complete", flush=True)
+
+        top3_idx = np.argsort(preds)[::-1][:3]
+        print("4. Top3 complete", flush=True)
+    except Exception as e:
+        print("error")
+
     try:
         image_bytes = file.read()
         img_tensor, pil_img = preprocess_image(image_bytes)
