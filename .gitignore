@@ -1,11 +1,24 @@
-!*.keras
-!*.npy
-!*.npz
+# !*.keras
+# !*.npy
+# !*.npz
+# *.json
+# __pycache__/
+# *.pyc
+# static/uploads/
+# !static/dataset_images/
+# .env
+# venv/
+# *.egg-info/
+# .DS_Store
+
+*.keras
+*.npy
+*.npz
 *.json
 __pycache__/
 *.pyc
 static/uploads/
-!static/dataset_images/
+static/dataset_images/
 .env
 venv/
 *.egg-info/
