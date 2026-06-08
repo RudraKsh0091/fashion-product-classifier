@@ -1,4 +1,5 @@
+models/
 *.keras
 *.npy
 *.json
-test_img.jpg
+test_img
