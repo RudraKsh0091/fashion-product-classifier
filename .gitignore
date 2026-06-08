@@ -1,6 +1,6 @@
 !*.keras
-*.npy
-*.npz
+!*.npy
+!*.npz
 *.json
 __pycache__/
 *.pyc
