@@ -1,5 +1,3 @@
-*.keras
-*.npy
 *.npz
 *.json
 __pycache__/
