@@ -1,6 +1,10 @@
 # StyleScan — AI Fashion Intelligence
 
+## Live Demo
+🚀 [Try StyleScan on HuggingFace Spaces](https://huggingface.co/spaces/RudraKsh-00/stylescan)
+
 A deep learning web app that classifies fashion products and surfaces visually similar items using MobileNetV2 transfer learning.
+
 
 ![StyleScan Demo](outputs/confusion_matrix.png)
 
