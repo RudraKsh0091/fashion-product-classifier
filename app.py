@@ -3,39 +3,24 @@ import numpy as np
 from flask import Flask, request, jsonify, render_template, send_from_directory
 from PIL import Image
 import io
-import tensorflow as tf
-import keras
-
-
-# add this right after imports, before anything else
-import os
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-os.environ['CUDA_VISIBLE_DEVICES'] = '-1'  # force CPU
-
-import tensorflow as tf
-tf.config.set_visible_devices([], 'GPU')
-
-# limit TF memory usage
-gpus = tf.config.list_physical_devices('GPU')
-if gpus:
-    for gpu in gpus:
-        tf.config.experimental.set_memory_growth(gpu, True)
-
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 
-os.makedirs('static', exist_ok=True)
-os.makedirs('static/uploads', exist_ok=True)
-
-model = None
+interpreter = None
+input_details = None
+output_details = None
 le_classes = None
 
 def load_model():
-    global model, le_classes
-    print("[StyleScan] Loading model...")
-    model = keras.saving.load_model('models/fashion_classifier.keras')
+    global interpreter, input_details, output_details, le_classes
+    import tflite_runtime.interpreter as tflite
+    print("[StyleScan] Loading TFLite model...")
+    interpreter = tflite.Interpreter(model_path='models/fashion_classifier.tflite')
+    interpreter.allocate_tensors()
+    input_details = interpreter.get_input_details()
+    output_details = interpreter.get_output_details()
     le_classes = np.load('models/label_classes.npy', allow_pickle=True)
     print(f"[StyleScan] Model loaded. Classes: {len(le_classes)}")
 
@@ -43,8 +28,14 @@ def preprocess_image(image_bytes):
     img = Image.open(io.BytesIO(image_bytes)).convert('RGB')
     img = img.resize((224, 224))
     img_array = np.array(img, dtype=np.float32)
-    img_array = tf.keras.applications.mobilenet_v2.preprocess_input(img_array)
+    # MobileNetV2 preprocessing: scale to [-1, 1]
+    img_array = (img_array / 127.5) - 1.0
     return np.expand_dims(img_array, axis=0), img
+
+def predict_tflite(img_tensor):
+    interpreter.set_tensor(input_details[0]['index'], img_tensor)
+    interpreter.invoke()
+    return interpreter.get_tensor(output_details[0]['index'])[0]
 
 @app.route('/')
 def index():
@@ -56,7 +47,7 @@ def uploaded_file(filename):
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    if model is None or le_classes is None:
+    if interpreter is None or le_classes is None:
         return jsonify({'error': 'Model not loaded'}), 500
     if 'image' not in request.files:
         return jsonify({'error': 'No image uploaded'}), 400
@@ -65,27 +56,11 @@ def predict():
     if file.filename == '':
         return jsonify({'error': 'Empty filename'}), 400
 
-
-    try:
-        image_bytes = file.read()
-        print("1. File read", flush=True)
-
-        img_tensor, pil_img = preprocess_image(image_bytes)
-        print("2. Preprocessed", flush=True)
-
-        preds = model.predict(img_tensor, verbose=0)[0]
-        print("3. Prediction complete", flush=True)
-
-        top3_idx = np.argsort(preds)[::-1][:3]
-        print("4. Top3 complete", flush=True)
-    except Exception as e:
-        print("error")
-
     try:
         image_bytes = file.read()
         img_tensor, pil_img = preprocess_image(image_bytes)
 
-        preds = model.predict(img_tensor, verbose=0)[0]
+        preds = predict_tflite(img_tensor)
         top3_idx = np.argsort(preds)[::-1][:3]
         predictions = [
             {
@@ -114,7 +89,7 @@ def predict():
 def health():
     return jsonify({
         'status': 'ok',
-        'model_loaded': model is not None,
+        'model_loaded': interpreter is not None,
         'classes': len(le_classes) if le_classes is not None else 0
     })
 
@@ -124,4 +99,5 @@ except Exception as e:
     print(f"[StyleScan] Startup error: {e}")
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=False)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
