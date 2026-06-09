@@ -6,6 +6,22 @@ import io
 import tensorflow as tf
 import keras
 
+
+# add this right after imports, before anything else
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1'  # force CPU
+
+import tensorflow as tf
+tf.config.set_visible_devices([], 'GPU')
+
+# limit TF memory usage
+gpus = tf.config.list_physical_devices('GPU')
+if gpus:
+    for gpu in gpus:
+        tf.config.experimental.set_memory_growth(gpu, True)
+
+
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
