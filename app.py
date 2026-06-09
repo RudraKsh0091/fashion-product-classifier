@@ -1,26 +1,24 @@
 import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+
 import numpy as np
 from flask import Flask, request, jsonify, render_template, send_from_directory
 from PIL import Image
 import io
+import tensorflow as tf
 
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 
-interpreter = None
-input_details = None
-output_details = None
+model = None
 le_classes = None
 
 def load_model():
-    global interpreter, input_details, output_details, le_classes
-    import tflite_runtime.interpreter as tflite
-    print("[StyleScan] Loading TFLite model...")
-    interpreter = tflite.Interpreter(model_path='models/fashion_classifier.tflite')
-    interpreter.allocate_tensors()
-    input_details = interpreter.get_input_details()
-    output_details = interpreter.get_output_details()
+    global model, le_classes
+    print("[StyleScan] Loading model...")
+    model = tf.keras.models.load_model('models/fashion_classifier.keras')
     le_classes = np.load('models/label_classes.npy', allow_pickle=True)
     print(f"[StyleScan] Model loaded. Classes: {len(le_classes)}")
 
@@ -28,14 +26,8 @@ def preprocess_image(image_bytes):
     img = Image.open(io.BytesIO(image_bytes)).convert('RGB')
     img = img.resize((224, 224))
     img_array = np.array(img, dtype=np.float32)
-    # MobileNetV2 preprocessing: scale to [-1, 1]
-    img_array = (img_array / 127.5) - 1.0
+    img_array = tf.keras.applications.mobilenet_v2.preprocess_input(img_array)
     return np.expand_dims(img_array, axis=0), img
-
-def predict_tflite(img_tensor):
-    interpreter.set_tensor(input_details[0]['index'], img_tensor)
-    interpreter.invoke()
-    return interpreter.get_tensor(output_details[0]['index'])[0]
 
 @app.route('/')
 def index():
@@ -47,7 +39,7 @@ def uploaded_file(filename):
 
 @app.route('/predict', methods=['POST'])
 def predict():
-    if interpreter is None or le_classes is None:
+    if model is None or le_classes is None:
         return jsonify({'error': 'Model not loaded'}), 500
     if 'image' not in request.files:
         return jsonify({'error': 'No image uploaded'}), 400
@@ -60,7 +52,7 @@ def predict():
         image_bytes = file.read()
         img_tensor, pil_img = preprocess_image(image_bytes)
 
-        preds = predict_tflite(img_tensor)
+        preds = model.predict(img_tensor, verbose=0)[0]
         top3_idx = np.argsort(preds)[::-1][:3]
         predictions = [
             {
@@ -89,7 +81,7 @@ def predict():
 def health():
     return jsonify({
         'status': 'ok',
-        'model_loaded': interpreter is not None,
+        'model_loaded': model is not None,
         'classes': len(le_classes) if le_classes is not None else 0
     })
 
@@ -99,5 +91,5 @@ except Exception as e:
     print(f"[StyleScan] Startup error: {e}")
 
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 5000))
+    port = int(os.environ.get('PORT', 7860))
     app.run(host='0.0.0.0', port=port, debug=False)
